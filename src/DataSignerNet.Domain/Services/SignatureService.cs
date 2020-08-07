@@ -94,7 +94,7 @@ namespace DataSignerNet.Domain.Services
                 = reqGen.Generate(TspAlgorithms.Sha1, hash, BigInteger.ValueOf(100));
             byte[] tsData = tsReq.GetEncoded();
             HttpWebRequest req =
-                (HttpWebRequest) WebRequest.Create("http://timestamp.digicert.com");
+                (HttpWebRequest)WebRequest.Create("http://timestamp.digicert.com");
             req.Method = "POST";
             req.ContentType = "application/timestamp-query";
 
@@ -104,27 +104,20 @@ namespace DataSignerNet.Domain.Services
             reqStream.Write(tsData, 0, tsData.Length);
             reqStream.Close();
 
-            HttpWebResponse res = (HttpWebResponse) req.GetResponse();
+            HttpWebResponse res = (HttpWebResponse)req.GetResponse();
 
-            if (res == null)
+            Stream resStream = new BufferedStream(res.GetResponseStream());
+
+            TimeStampResponse tsRes = new TimeStampResponse(resStream);
+            resStream.Close();
+
+            try
             {
-                return false;
+                tsRes.Validate(tsReq);
             }
-            else
+            catch (TspException e)
             {
-                Stream resStream = new BufferedStream(res.GetResponseStream());
-
-                TimeStampResponse tsRes = new TimeStampResponse(resStream);
-                resStream.Close();
-
-                try
-                {
-                    tsRes.Validate(tsReq);
-                }
-                catch (TspException e)
-                {
-                    Console.WriteLine(e.Message);
-                }
+                Console.WriteLine(e.Message);
             }
 
             return false;
