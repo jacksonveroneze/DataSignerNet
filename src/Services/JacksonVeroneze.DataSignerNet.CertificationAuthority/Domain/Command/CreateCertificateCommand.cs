@@ -1,6 +1,8 @@
-namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Commands
+using MediatR;
+
+namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Command
 {
-    public class CreateCertificateRequest
+    public class CreateCertificateCommand : IRequest<CreateCertificateResult>
     {
         // O
         public string Organization { get; set; }

@@ -1,5 +1,6 @@
-using JacksonVeroneze.DataSignerNet.CertificationAuthority.Interfaces;
-using JacksonVeroneze.DataSignerNet.CertificationAuthority.Services;
+using JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Interfaces;
+using JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Services;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Extensions
@@ -8,6 +9,7 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Extensions
     {
         public static void AddServices(this IServiceCollection services)
         {
+            services.AddMediatR(typeof(Startup));
             services.AddTransient<ICertificateService, CertificateService>();
         }
     }

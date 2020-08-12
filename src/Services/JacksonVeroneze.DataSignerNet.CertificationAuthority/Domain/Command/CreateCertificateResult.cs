@@ -1,8 +1,8 @@
 using System;
 
-namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Commands
+namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Command
 {
-    public class ReadCertificateResponse
+    public class CreateCertificateResult
     {
         public string Issuer { get; set; }
 
@@ -20,10 +20,6 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Commands
 
         public string Algorithm { get; set; }
 
-        public string Type { get; set; }
-
-        public bool Expired { get; set; }
-
-        public bool Revoged { get; set; }
+        public string RawData { get; set; }
     }
 }

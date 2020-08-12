@@ -5,8 +5,8 @@ using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using DataSignerNet.Domain;
-using JacksonVeroneze.DataSignerNet.CertificationAuthority.Commands;
-using JacksonVeroneze.DataSignerNet.CertificationAuthority.Interfaces;
+using JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Command;
+using JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Interfaces;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.X509;
 using Org.BouncyCastle.Math;
@@ -18,7 +18,7 @@ using Org.BouncyCastle.Crypto.Operators;
 using Org.BouncyCastle.Pkcs;
 using X509Certificate = Org.BouncyCastle.X509.X509Certificate;
 
-namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Services
+namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Services
 {
     public class CertificateService : ICertificateService
     {
@@ -30,7 +30,7 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Services
         //   request:
         //     The request param.
         //
-        public CreateCertificateResponse Generate(CreateCertificateRequest request)
+        public CreateCertificateResult Generate(CreateCertificateCommand request)
         {
             SecureRandom random = new SecureRandom();
 
@@ -86,13 +86,13 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Services
             return FactoryResponse(x509Certificate2);
         }
 
-        public ReadCertificateResponse Info(ReadCertificateRequest request)
+        public InfoCertificateResult Info(InfoCertificateCommand request)
         {
             X509CertificateParser parser = new X509CertificateParser();
 
             X509Certificate certificate = parser.ReadCertificate(Encoding.UTF8.GetBytes(request.Content));
 
-            return new ReadCertificateResponse()
+            return new InfoCertificateResult()
             {
                 Issuer = certificate.IssuerDN.ToString(),
                 Subject = certificate.SubjectDN.ToString(),
@@ -114,9 +114,9 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Services
         //   request:
         //     The request param.
         //
-        private CreateCertificateResponse FactoryResponse(X509Certificate2 x509Certificate2)
+        private CreateCertificateResult FactoryResponse(X509Certificate2 x509Certificate2)
         {
-            return new CreateCertificateResponse()
+            return new CreateCertificateResult()
             {
                 Issuer = x509Certificate2.IssuerName.Name,
                 Subject = x509Certificate2.SubjectName.Name,
@@ -183,7 +183,7 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Services
         //   request:
         //     The request param.
         //
-        private IDictionary FactorySubjectAttrs(CreateCertificateRequest request)
+        private IDictionary FactorySubjectAttrs(CreateCertificateCommand request)
         {
             return new Dictionary<DerObjectIdentifier, string>()
             {

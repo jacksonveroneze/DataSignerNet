@@ -1,6 +1,7 @@
 ﻿using System.Net.Mime;
-using JacksonVeroneze.DataSignerNet.CertificationAuthority.Commands;
-using JacksonVeroneze.DataSignerNet.CertificationAuthority.Interfaces;
+using System.Threading.Tasks;
+using JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Command;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -12,8 +13,7 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Controllers
     public class CertificatesController : ControllerBase
     {
         private readonly ILogger<CertificatesController> _logger;
-        private readonly ICertificateService _certificateService;
-
+        private readonly IMediator _mediator;
         //
         // Summary:
         //     /// Method responsible for initializing the controller. ///
@@ -22,13 +22,13 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Controllers
         //   logger:
         //     The logger param.
         //
-        //   certificateService:
-        //     The certificateService param.
+        //   mediator:
+        //     The mediator param.
         //
-        public CertificatesController(ILogger<CertificatesController> logger, ICertificateService certificateService)
+        public CertificatesController(ILogger<CertificatesController> logger, IMediator mediator)
         {
             _logger = logger;
-            _certificateService = certificateService;
+            _mediator = mediator;
         }
 
         //
@@ -42,13 +42,13 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Controllers
         [HttpPost("new")]
         [Consumes(MediaTypeNames.Application.Json)]
         [Produces(MediaTypeNames.Application.Json)]
-        [ProducesResponseType(typeof(CreateCertificateResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(CreateCertificateCommand), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ActionResult<CreateCertificateResponse> Create([FromBody] CreateCertificateRequest request)
+        public async Task<IActionResult> Create([FromBody] CreateCertificateCommand request)
         {
             _logger.LogInformation("Request: {0}", "Generate new certificate");
 
-            return _certificateService.Generate(request);
+            return Ok(await _mediator.Send(request));
         }
 
 
@@ -63,13 +63,13 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Controllers
         [HttpPost("info")]
         [Consumes(MediaTypeNames.Application.Json)]
         [Produces(MediaTypeNames.Application.Json)]
-        [ProducesResponseType(typeof(CreateCertificateResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(InfoCertificateResult), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ActionResult<ReadCertificateResponse> Info([FromBody] ReadCertificateRequest request)
+        public async Task<IActionResult> Info([FromBody] InfoCertificateCommand request)
         {
             _logger.LogInformation("Request: {0}", "Info certificate");
 
-            return _certificateService.Info(request);
+            return Ok(await _mediator.Send(request));
         }
     }
 }
