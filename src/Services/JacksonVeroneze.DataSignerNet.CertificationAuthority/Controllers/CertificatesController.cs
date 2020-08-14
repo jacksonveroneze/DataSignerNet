@@ -51,7 +51,6 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Controllers
             return Ok(await _mediator.Send(request));
         }
 
-
         //
         // Summary:
         //     /// Method responsible for action: New (POST). ///
@@ -68,6 +67,26 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Controllers
         public async Task<IActionResult> Info([FromBody] InfoCertificateCommand request)
         {
             _logger.LogInformation("Request: {0}", "Info certificate");
+
+            return Ok(await _mediator.Send(request));
+        }
+        
+        //
+        // Summary:
+        //     /// Method responsible for action: revoke (POST). ///
+        //
+        // Parameters:
+        //   command:
+        //     The command param.
+        //
+        [HttpPost("revoke")]
+        [Consumes(MediaTypeNames.Application.Json)]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(typeof(RevokeCertificateResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> Revoke([FromBody] RevokeCertificateCommand request)
+        {
+            _logger.LogInformation("Request: {0}", "Revoke certificate");
 
             return Ok(await _mediator.Send(request));
         }
