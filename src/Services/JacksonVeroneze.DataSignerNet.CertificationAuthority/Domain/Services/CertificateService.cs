@@ -16,7 +16,9 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Operators;
 using Org.BouncyCastle.Pkcs;
+using Org.BouncyCastle.Utilities;
 using X509Certificate = Org.BouncyCastle.X509.X509Certificate;
+using Org.BouncyCastle.X509.Extension;
 
 namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Services
 {
@@ -32,6 +34,11 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Services
         //
         public CreateCertificateResult Generate(CreateCertificateCommand request)
         {
+            AsymmetricKeyParameter caPrivateKey = null;
+
+            var caCert = GenerateCACertificate("CN=MyROOTCA", ref caPrivateKey);
+
+
             SecureRandom random = new SecureRandom();
 
             RsaKeyPairGenerator keyPairGenerator = new RsaKeyPairGenerator();
@@ -42,8 +49,10 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Services
             IDictionary issuerAttrs = FactoryIssuerAttrs();
             IDictionary subjectAttrs = FactorySubjectAttrs(request);
 
+            BigInteger serialNumber = BigInteger.ProbablePrime(120, new Random());
+
             X509V3CertificateGenerator certificateGenerator = new X509V3CertificateGenerator();
-            certificateGenerator.SetSerialNumber(BigInteger.ProbablePrime(120, new Random()));
+            certificateGenerator.SetSerialNumber(serialNumber);
             certificateGenerator.SetIssuerDN(new X509Name(new ArrayList(issuerAttrs.Keys), issuerAttrs));
             certificateGenerator.SetSubjectDN(new X509Name(new ArrayList(subjectAttrs.Keys), subjectAttrs));
             certificateGenerator.SetNotBefore(DateTime.UtcNow.Date);
@@ -54,7 +63,7 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Services
                 new KeyUsage(KeyUsage.DigitalSignature | KeyUsage.KeyAgreement | KeyUsage.NonRepudiation));
 
             certificateGenerator.AddExtension(X509Extensions.ExtendedKeyUsage.Id, false,
-                new ExtendedKeyUsage(new[] {KeyPurposeID.IdKPServerAuth}));
+                new ExtendedKeyUsage(new[] { KeyPurposeID.IdKPServerAuth }));
 
             GeneralNames subjectAltName = new GeneralNames(new GeneralName(GeneralName.DnsName, "SAN"));
             certificateGenerator.AddExtension(X509Extensions.SubjectAlternativeName, false, subjectAltName);
@@ -70,7 +79,7 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Services
 
             store.SetCertificateEntry(certificate.SubjectDN.ToString(), certEntry);
             store.SetKeyEntry(certificate.SubjectDN + "_key", new AsymmetricKeyEntry(subjectKeyPair.Private),
-                new[] {certEntry});
+                new[] { certEntry });
 
             using FileStream filestream = new FileStream(@$"/home/jackson/{certificate.SerialNumber}.pfx", FileMode.Create,
                 FileAccess.ReadWrite);
@@ -80,8 +89,13 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Services
 
             store.Save(p12Stream, request.Pin.ToCharArray(), random);
 
+            byte[] pfx = Pkcs12Utilities.ConvertToDefiniteLength(p12Stream.ToArray(), request.Pin.ToCharArray());
+
             X509Certificate2 x509Certificate2 =
-                new X509Certificate2(p12Stream.ToArray(), request.Pin, X509KeyStorageFlags.DefaultKeySet);
+                new X509Certificate2(pfx, request.Pin, X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
+
+
+            CreateCrl(caCert, caPrivateKey, serialNumber);
 
             return FactoryResponse(x509Certificate2);
         }
@@ -201,6 +215,82 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Services
                 {X509Name.GivenName, request.GivenName},
                 {X509Name.Gender, request.Gender},
             };
+        }
+
+        public X509Crl CreateCrl(
+            X509Certificate caCert,
+            AsymmetricKeyParameter caKey,
+            BigInteger serialNumber)
+        {
+            X509V2CrlGenerator crlGen = new X509V2CrlGenerator();
+            DateTime now = DateTime.UtcNow;
+
+            crlGen.SetIssuerDN(PrincipalUtilities.GetSubjectX509Principal(caCert));
+
+            crlGen.SetThisUpdate(now);
+            crlGen.SetNextUpdate(now.AddMinutes(30));
+            crlGen.SetSignatureAlgorithm("SHA256WithRSAEncryption");
+
+            crlGen.AddCrlEntry(serialNumber, now, CrlReason.PrivilegeWithdrawn);
+
+            crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(caCert));
+            crlGen.AddExtension(X509Extensions.CrlNumber, false, new CrlNumber(BigInteger.One));
+
+            SecureRandom random = new SecureRandom();
+
+            return crlGen.Generate(caKey, random);
+        }
+
+        public X509Certificate GenerateCACertificate(string subjectName, ref AsymmetricKeyParameter CaPrivateKey)
+        {
+            const int keyStrength = 2048;
+
+            // Generating Random Numbers
+            SecureRandom random = new SecureRandom();
+
+            // The Certificate Generator
+            X509V3CertificateGenerator certificateGenerator = new X509V3CertificateGenerator();
+
+            // Serial Number
+            BigInteger serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random);
+            certificateGenerator.SetSerialNumber(serialNumber);
+
+            // Signature Algorithm
+            const string signatureAlgorithm = "SHA256WithRSA";
+            certificateGenerator.SetSignatureAlgorithm(signatureAlgorithm);
+
+            // Issuer and Subject Name
+            X509Name subjectDN = new X509Name(subjectName);
+            X509Name issuerDN = subjectDN;
+            certificateGenerator.SetIssuerDN(issuerDN);
+            certificateGenerator.SetSubjectDN(subjectDN);
+
+            // Valid For
+            DateTime notBefore = DateTime.UtcNow.Date;
+            DateTime notAfter = notBefore.AddYears(2);
+
+            certificateGenerator.SetNotBefore(notBefore);
+            certificateGenerator.SetNotAfter(notAfter);
+
+            // Subject Public Key
+            AsymmetricCipherKeyPair subjectKeyPair;
+            KeyGenerationParameters keyGenerationParameters = new KeyGenerationParameters(random, keyStrength);
+            RsaKeyPairGenerator keyPairGenerator = new RsaKeyPairGenerator();
+            keyPairGenerator.Init(keyGenerationParameters);
+            subjectKeyPair = keyPairGenerator.GenerateKeyPair();
+
+            certificateGenerator.SetPublicKey(subjectKeyPair.Public);
+
+            // Generating the Certificate
+            AsymmetricCipherKeyPair issuerKeyPair = subjectKeyPair;
+
+            // Selfsign certificate
+            Org.BouncyCastle.X509.X509Certificate certificate = certificateGenerator.Generate(issuerKeyPair.Private, random);
+            X509Certificate2 x509 = new X509Certificate2(certificate.GetEncoded());
+
+            CaPrivateKey = issuerKeyPair.Private;
+
+            return certificate;
         }
     }
 }
