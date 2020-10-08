@@ -81,10 +81,6 @@ namespace JacksonVeroneze.DataSignerNet.CertificationAuthority.Domain.Services
             store.SetKeyEntry(certificate.SubjectDN + "_key", new AsymmetricKeyEntry(subjectKeyPair.Private),
                 new[] { certEntry });
 
-            using FileStream filestream = new FileStream(@$"/home/jackson/{certificate.SerialNumber}.pfx", FileMode.Create,
-                FileAccess.ReadWrite);
-            store.Save(filestream, request.Pin.ToCharArray(), random);
-
             MemoryStream p12Stream = new MemoryStream();
 
             store.Save(p12Stream, request.Pin.ToCharArray(), random);
