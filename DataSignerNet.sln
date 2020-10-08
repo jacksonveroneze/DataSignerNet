@@ -7,11 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B4181985-F68
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{5D8EE774-0C19-403F-90F4-D9643CEAC615}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JacksonVeroneze.DataSignerNet.Crl", "src\Services\JacksonVeroneze.DataSignerNet.Crl\JacksonVeroneze.DataSignerNet.Crl.csproj", "{15908C1E-4965-4120-957F-B793560B9C9A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JacksonVeroneze.DataSignerNet.Signer", "src\Services\JacksonVeroneze.DataSignerNet.Signer\JacksonVeroneze.DataSignerNet.Signer.csproj", "{8DEC319B-1EC6-4283-9449-BB9689327D73}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JacksonVeroneze.DataSignerNet.Timestamp", "src\Services\JacksonVeroneze.DataSignerNet.Timestamp\JacksonVeroneze.DataSignerNet.Timestamp.csproj", "{98138A60-558A-42F0-90E0-65AA74F2C6D3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JacksonVeroneze.DataSignerNet.CertificationAuthority", "src\Services\JacksonVeroneze.DataSignerNet.CertificationAuthority\JacksonVeroneze.DataSignerNet.CertificationAuthority.csproj", "{D7C9A487-5DB3-46EC-B2BE-CFF0E1563904}"
 EndProject
